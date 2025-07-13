@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Apple I P2P Chat</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background-color: black;
+      color: #00FF00;
+      font-family: monospace;
+      padding: 10px;
+    }
+    #messages {
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #00FF00;
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+    input, textarea, button {
+      background: black;
+      color: #00FF00;
+      border: 1px solid #00FF00;
+      font-family: monospace;
+      width: 100%;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Apple I P2P Chat</h2>
+  <div id="messages"></div>
+
+  <input id="msg" placeholder="Type message..." />
+  <button onclick="send()">Send</button>
+
+  <h3>Connection</h3>
+  <button onclick="createPeer()">Create Connection</button><br>
+  <textarea id="outSignal" rows="4" placeholder="Your Signal Data (send this to friend)"></textarea>
+  <textarea id="inSignal" rows="4" placeholder="Paste Their Signal Data Here"></textarea>
+  <button onclick="connect()">Connect</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
+  <script>
+    let peer;
+    const messages = document.getElementById('messages');
+
+    function log(msg) {
+      const div = document.createElement('div');
+      div.textContent = msg;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function createPeer() {
+      peer = new SimplePeer({ initiator: true, trickle: false });
+
+      peer.on('signal', data => {
+        document.getElementById('outSignal').value = JSON.stringify(data);
+      });
+
+      peer.on('connect', () => {
+        log("✅ Connected!");
+      });
+
+      peer.on('data', data => {
+        log("📩 " + data.toString());
+      });
+    }
+
+    function connect() {
+      if (!peer) {
+        peer = new SimplePeer({ initiator: false, trickle: false });
+
+        peer.on('signal', data => {
+          document.getElementById('outSignal').value = JSON.stringify(data);
+        });
+
+        peer.on('connect', () => {
+          log("✅ Connected!");
+        });
+
+        peer.on('data', data => {
+          log("📩 " + data.toString());
+        });
+      }
+
+      const inData = document.getElementById('inSignal').value;
+      try {
+        const signal = JSON.parse(inData);
+        peer.signal(signal);
+      } catch (e) {
+        alert("Invalid signal data");
+      }
+    }
+
+    function send() {
+      const msg = document.getElementById('msg').value;
+      if (msg && peer && peer.connected) {
+        peer.send(msg);
+        log("🧑 You: " + msg);
+        document.getElementById('msg').value = "";
+      }
+    }
+  </script>
+</body>
+</html>
